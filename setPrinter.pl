@@ -1,4 +1,4 @@
-#!/usr/bin/perl -3
+#!/usr/bin/perl -w
 
 use File::Basename;
 use Cwd qw(abs_path);
@@ -60,7 +60,7 @@ chomp $printStatus;
 
 if ( $printStatus eq "everyone" )
 {
-	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group is set to the _lpoperator. Nothing to change.\n";
+	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group is set to everyone. Nothing to change.\n";
 	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "Ending " . MyName . " " . $vers . ".\n";
 	close(LOG);
 	exit;
@@ -69,9 +69,10 @@ if ( $printStatus eq "everyone" )
 
 while ( $printStatus eq "_lpoperator" )
 {
-	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group is set to the _lpoperator. I will now set it to everyone.\n";
+	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group is set to _lpoperator. I will now set it to everyone.\n";
 	system("/usr/libexec/PlistBuddy -c 'Set :rights:system.print.operator:group everyone' /private/etc/authorization");
 	$printStatus = `/usr/libexec/PlistBuddy -c 'Print :rights:system.print.operator:group' /private/etc/authorization`;
+	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group has been successfully set to the everyone.\n" if ( $printStatus eq "everyone" );
 }
 
 print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "Ending " . MyName . " " . $vers . ".\n";
