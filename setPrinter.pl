@@ -48,13 +48,28 @@ sub TimeStamp
 }
 
 
+	# Set some variables.
 my $log = LogName();
 my $vers="v1.00";
+my $n = 0;
 
-	# Open the log file and start logging.
+	# Determine if the script is run by root. If not it will not work.
+my $me = `/usr/bin/whoami`;
+chomp $me;
+
+if ( $me ne "root" )
+{
+	print TimeStamp . " " . MyName . "[". $$ . "]: " . "Starting " . MyName . " " . $vers . ".\n";
+	print TimeStamp . " " . MyName . "[". $$ . "]: " . "This script needs to be run by root.\n";
+	print TimeStamp . " " . MyName . "[". $$ . "]: " . "Ending " . MyName . " " . $vers . ".\n";
+	exit;
+}
+
+	# Open the log file and start logging. Only root can write to the log file location.
 open(LOG,">$log");
 print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "Starting " . MyName . " " . $vers . ".\n";
 
+	# Check the print status to see if changes are necessary.
 my $printStatus = `/usr/libexec/PlistBuddy -c 'Print :rights:system.print.operator:group' /private/etc/authorization`;
 chomp $printStatus;
 
@@ -66,13 +81,22 @@ if ( $printStatus eq "everyone" )
 	exit;
 }
 
-
+	# If changes are necessary attempt to change them. Should it fail the loop will continue for n itereations in this case 3. After that it will give up.
 while ( $printStatus eq "_lpoperator" )
 {
 	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group is set to _lpoperator. I will now set it to everyone.\n";
 	system("/usr/libexec/PlistBuddy -c 'Set :rights:system.print.operator:group everyone' /private/etc/authorization");
+	$n++;
 	$printStatus = `/usr/libexec/PlistBuddy -c 'Print :rights:system.print.operator:group' /private/etc/authorization`;
+	chomp $printStatus;
 	print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "system.print.operator group has been successfully set to the everyone.\n" if ( $printStatus eq "everyone" );
+	if ( $n == 3 )
+	{
+		print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "There is a problem setting system.print.operator group to the everyone.\n";
+		print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "Unsuccessfull Exit: " . MyName . " " . $vers . ".\n";
+		close(LOG);
+		exit;
+	}
 }
 
 print LOG TimeStamp . " " . MyName . "[". $$ . "]: " . "Ending " . MyName . " " . $vers . ".\n";
